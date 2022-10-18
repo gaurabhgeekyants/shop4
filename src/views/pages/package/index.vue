@@ -1,0 +1,442 @@
+<!-- =========================================================================================
+    File Name:  Package
+    Description: These Details are added by Admin, this page is for add edit and delete PAckage
+     ========================================================================================== -->
+
+<template>
+    <vx-card>
+        <vs-table pagination max-items="25" search :data="Interests" stripe>
+            <div slot="header" class="vs-lg-12">
+                <div class="vx-row">
+                    <div class="vx-col xs:w-full md:w-1/3lg:w-1/3  sm:w-1/3 mb-6">
+                        <vs-input
+                                v-validate="'required'"
+                                data-vv-validate-on="blur"
+                                name="title"
+                                label-placeholder="Title"
+                                v-model="title"
+                                class="w-full no-icon-border"/>
+                        <span class="text-danger text-sm" v-show="errors.has('title')">{{ errors.first('title')
+                            }}</span>
+
+                    </div>
+                    <div class="vx-col xs:w-full md:w-1/3 lg:w-1/3 sm:w-1/3 mb-6">
+                        <vs-input v-validate="'numeric|required'" data-vv-validate-on="blur" name="numeric"
+                                  label-placeholder="Tenure" v-model="tenure" class="w-full no-icon-border tenur"/>
+                        <span class="text-danger text-sm" v-show="errors.has('numeric')">The tenure field is required and only contain Numeric Value</span>
+
+                    </div>
+                    <div class="vx-col">
+                        <button class="button-save p-3 mb-10 mr-4 rounded-lg vs-align-center cursor-pointer text-lg font-medium text-base text-primary border border-solid border-primary save"
+                                v-if="!addNewFlag" @click="saveInterest()">
+                            <span class="ml-2 text-base text-primary">Save</span>
+                        </button>
+                        <button class="button-save p-3 mb-10 mr-4 rounded-lg vs-align-center cursor-pointer text-lg font-medium text-base text-primary border border-solid border-primary save"
+                                v-if="addNewFlag" @click="updateInterest()">
+                            <span class="ml-2 text-base text-primary">Edit</span>
+                        </button>
+                        <button class="p-3 mb-10 mr-4 rounded-lg vs-align-center cursor-pointer text-lg font-medium text-base text-primary border border-solid border-primary save"
+                                @click="clearFields">
+                            <span class="ml-2 text-base text-primary">Cancel</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <template slot="thead">
+                <vs-th sort-key="title">Title</vs-th>
+                <vs-th sort-key="title">Tenure</vs-th>
+                <vs-th sort-key="action">Actions</vs-th>
+            </template>
+
+            <template slot-scope="{data}">
+                <vs-tr :data="tr" :key="indextr" v-for="(tr, indextr) in data">
+                    <vs-td :data="data[indextr].data.title">
+                        {{ data[indextr].data.title }}
+                    </vs-td>
+                    <vs-td>
+                        {{ data[indextr].data.tenure }}
+                    </vs-td>
+                    <vs-td>
+                        <div class="p-2 mb-2 rounded-lg cursor-pointer flex items-center justify-between text-sm font-medium text-base text-primary edit"
+                             @click="editInterest(tr.uid),addNewFlag=true, interestUID = tr.uid">
+                            <span class="ml-2 text-base text-primary"><feather-icon icon="EditIcon"
+                                                                                    svgClasses="h-5 w-5"/></span>
+                        </div>
+                        <span><a
+                                class="p-2 mb-2 rounded-lg cursor-pointer flex items-center justify-between text-sm font-medium text-base text-danger trash"
+                                button @click="deleteInterest(tr.uid,tr.data.title)"><feather-icon icon="TrashIcon"
+                                                                                                   svgClasses="h-5 w-5"/></a> </span>
+                    </vs-td>
+                </vs-tr>
+            </template>
+        </vs-table>
+    </vx-card>
+</template>
+
+<script>
+
+    import firebase from 'firebase/app'
+    require('firebase/firestore')
+    import 'firebase/auth'
+    export default {
+        components: {},
+        data() {
+            return {
+                title: '',
+                tenure: '',
+                Interests: [],
+                addNewDataSidebar: false,
+                statusUID: '',
+                addNewFlag: false,
+                timer: null,
+                totalTime: (25 * 60),
+                assignedTrainer: '',
+                resetButton: false,
+            }
+        },
+        computed: {
+            minutes: function () {
+                const minutes = Math.floor(this.totalTime / 60);
+                return this.padTime(minutes);
+            },
+            seconds: function () {
+                const seconds = this.totalTime - (this.minutes * 60);
+                return this.padTime(seconds);
+            }
+        },
+        methods: {
+            clearFields() {
+                this.title = '';
+            },
+            loadContent() {
+                this.$vs.loading({
+                    background: this.backgroundLoading,
+                    color: this.colorLoading,
+                    container: ".button-save",
+                    scale: 0.45
+                })
+                setTimeout(() => {
+                    this.$vs.loading.close(".button-save > .con-vs-loading")
+                }, 2000);
+            },
+            getInterests(){
+                firebase.firestore().collection('package').orderBy('createdAt').get().then((querySnapshot) => {
+                    this.Interests = []
+                    querySnapshot.forEach((doc) => {
+                        const interest = {
+                            uid: doc.id,
+                            data: doc.data(),
+                            title: doc.data().title
+
+                        }
+                        this.Interests.push(interest)
+                    })
+                })
+            },
+            saveInterest (){
+                this.$validator.validateAll().then(result => {
+                    if (result) {
+                        this.loadContent();
+                        const memberPayLoad = {
+                            title: this.title ? this.title : '',
+                            tenure: this.tenure ? this.tenure : '',
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        }
+                        firebase.firestore().collection("package").add(
+                            memberPayLoad
+                        )
+                            .then(() => {
+                                    this.getInterests();
+                                    this.title = '';
+                                    this.tenure = '';
+                                    this.$vs.notify({
+                                        title: 'Interest Created',
+                                        text: 'Successfully Created!',
+                                        iconPack: 'feather',
+                                        icon: 'icon-check',
+                                        color: 'success'
+                                    });
+                                },
+                                (error) => {
+                                    this.$vs.notify({
+                                        title: 'Error',
+                                        text: error.message,
+                                        iconPack: 'feather',
+                                        icon: 'icon-alert-circle',
+                                        color: 'danger'
+                                    });
+                                })
+                    } else {
+                        // form have errors
+                    }
+                })
+            },
+            deleteInterest(uid, title) {
+                let title_text = title;
+                firebase.firestore().collection('package')
+                    .doc(uid).delete()
+                    .then(() => {
+                        this.getInterests()
+                        console.log('Successfully Deleted the record')
+                        this.$vs.notify({
+                            title: '',
+                            tenure: '',
+                            text: title_text + ' Deleted!!',
+                            iconPack: 'feather',
+                            icon: 'icon-alert-circle',
+                            color: 'danger'
+                        });
+                        this.addNewFlag = false;
+                        this.title = '';
+                        this.tenure = '';
+                    })
+                    .catch(error => {
+                        console.error('There was an error deleting the record: ' + error)
+                    })
+            },
+            editInterest(uid){
+                firebase.firestore().collection('package').doc(uid).get().then((doc) => {
+                    let value = doc.data();
+                    this.title = value.title;
+                    this.tenure = value.tenure
+                })
+            },
+            updateInterest(){
+                this.$validator.validateAll().then(result => {
+                    if (result) {
+                        this.loadContent()
+                        firebase.firestore().collection('package').doc(this.interestUID).get()
+                            .then(snap => {
+                                return snap.ref.update({
+                                    title: this.title,
+                                    tenure: this.tenure
+                                });
+                            })
+                            .then(() => {
+                                this.addNewFlag = false;
+                                this.$vs.notify({
+                                    title: this.title + ' updated!!',
+                                    text: 'Successfully Update!',
+                                    iconPack: 'feather',
+                                    icon: 'icon-check',
+                                    color: 'success'
+                                });
+                                this.getInterests();
+                                this.title = '';
+                                this.tenure = '';
+                            })
+                            .catch(error => {
+                                console.error('There was an error editing the record: ' + error)
+                            }), (error) => {
+                            this.$vs.notify({
+                                title: 'Error',
+                                text: error.message,
+                                iconPack: 'feather',
+                                icon: 'icon-alert-circle',
+                                color: 'danger'
+                            });
+                        }
+                    } else {
+                        // form have errors
+                    }
+                })
+
+            },
+            startTimer: function () {
+                this.timer = setInterval(() => this.countdown(), 1000);
+                this.resetButton = true;
+            },
+            stopTimer: function () {
+                clearInterval(this.timer);
+                this.timer = null;
+                this.resetButton = true;
+            },
+            resetTimer: function () {
+                this.totalTime = (25 * 60);
+                clearInterval(this.timer);
+                this.timer = null;
+                this.resetButton = false;
+            },
+            padTime: function (time) {
+                return (time < 10 ? '0' : '') + time;
+            },
+            countdown: function () {
+                if (this.totalTime >= 1) {
+                    this.totalTime--;
+                } else {
+                    this.totalTime = 0;
+                    this.resetTimer()
+                }
+            }
+        },
+        created() {
+            this.getInterests()
+        }
+    }
+</script>
+<style lang="scss" scoped>
+    .vs-con-input-label.is-label-placeholder {
+        margin-top: 0;
+    }
+
+    .vs-con-input-label.is-label-placeholder input {
+        height: 50px;
+        padding: 10px;
+    }
+
+    .vs-input--placeholder.normal {
+        padding: 15px;
+    }
+
+    .edit {
+        float: left;
+        width: 30px;
+        height: 30px;
+    }
+
+    .edit:hover {
+        background: #7367f0;
+    }
+
+    .edit .text-base {
+        margin: 0 !important;
+    }
+
+    .edit .feather-icon {
+        color: #7367f0;
+        margin: 7px 0 0 1px;
+    }
+
+    .trash {
+        float: left;
+        width: 30px;
+        height: 30px;
+
+    }
+
+    .save {
+        float: left;
+        width: 100px;
+        height: 50px;
+        background: none;
+    }
+
+    .trash .text-base {
+        margin: 0 !important;
+    }
+
+    .trash .feather-icon {
+        color: #ff9f43;
+    }
+
+    .add-new:hover {
+        background: #8c83f3;
+    }
+
+    .add-new:hover .text-primary {
+        color: #fff !important;
+    }
+
+    #data-list-list-view {
+        .vs-con-table {
+
+            .vs-table--header {
+                display: flex;
+                flex-wrap: wrap-reverse;
+                margin-left: 1.5rem;
+                margin-right: 1.5rem;
+                > span {
+                    display: flex;
+                    flex-grow: 1;
+                }
+
+                .vs-table--search {
+                    padding-top: 0;
+
+                    .vs-table--search-input {
+                        padding: 0.9rem 2.5rem;
+                        font-size: 1rem;
+
+                        & + i {
+                            left: 1rem;
+                        }
+
+                        &:focus + i {
+                            left: 1rem;
+                        }
+                    }
+                }
+            }
+
+            .vs-table {
+                border-collapse: separate;
+                border-spacing: 0 1.3rem;
+                padding: 0 1rem;
+
+                tr {
+                    box-shadow: 0 4px 20px 0 rgba(0, 0, 0, .05);
+                    td {
+                        padding: 8px !important;
+                        &:first-child {
+                            border-top-left-radius: .5rem;
+                            border-bottom-left-radius: .5rem;
+                        }
+                        &:last-child {
+                            border-top-right-radius: .5rem;
+                            border-bottom-right-radius: .5rem;
+                        }
+                    }
+                    td.td-check {
+                        padding: 8px !important;
+                    }
+                }
+            }
+
+            .vs-table--thead {
+                th {
+                    padding-top: 0;
+                    padding-bottom: 0;
+
+                    .vs-table-text {
+                        text-transform: uppercase;
+                        font-weight: 600;
+                    }
+                }
+                th.td-check {
+                    padding: 0 15px !important;
+                }
+                tr {
+                    background: none;
+                    box-shadow: none;
+                }
+            }
+
+            .vs-table--pagination {
+                justify-content: center;
+            }
+        }
+    }
+
+    #timer {
+        line-height: 1;
+        margin-bottom: 20px;
+    }
+
+    .save {
+        float: left;
+        width: 100px;
+        height: 50px;
+        background: none;
+        &:hover {
+            background: rgb(115, 103, 240);
+            &:hover span {
+                color: #fff !important;
+            }
+        }
+    }
+
+    #start {
+        border: 0;
+        background: none;
+    }
+</style>

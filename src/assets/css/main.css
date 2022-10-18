@@ -1,0 +1,93 @@
+/**
+ * This injects Tailwind's base styles, which is a combination of
+ * Normalize.css and some additional base styles.
+ *
+ * You can see the styles here:
+ * https://github.com/tailwindcss/tailwindcss/blob/master/css/preflight.css
+ *
+ * If using `postcss-import`, you should import this line from it's own file:
+ *
+ * @import "./tailwind-preflight.css";
+ *
+ * See: https://github.com/tailwindcss/tailwindcss/issues/53#issuecomment-341413622
+ */
+/*NOTE: 'preflight' IS RENAMED TO 'base'*/
+/*@tailwind base;*/
+
+/**
+ * Here you would add any of your custom component classes; stuff that you'd
+ * want loaded *before* the utilities so that the utilities could still
+ * override them.
+ *
+ * Example:
+ *
+ * .btn { ... }
+ * .form-input { ... }
+ *
+ * Or if using a preprocessor or `postcss-import`:
+ *
+ * @import "components/buttons";
+ * @import "components/forms";
+ */
+ @tailwind components;
+
+/**
+ * This injects all of Tailwind's utility classes, generated based on your
+ * config file.
+ *
+ * If using `postcss-import`, you should import this line from it's own file:
+ *
+ * @import "./tailwind-utilities.css";
+ *
+ * See: https://github.com/tailwindcss/tailwindcss/issues/53#issuecomment-341413622
+ */
+@tailwind utilities;
+
+/**
+ * Here you would add any custom utilities you need that don't come out of the
+ * box with Tailwind.
+ *
+ * Example :
+ *
+ * .bg-pattern-graph-paper { ... }
+ * .skew-45 { ... }
+ *
+ * Or if using a preprocessor or `postcss-import`:
+ *
+ * @import "utilities/background-patterns";
+ * @import "utilities/skew-transforms";
+ */
+
+.vs-table--not-data {
+  display: none;
+}
+.vx-card__body .vs-collapse-item .vs-collapse-item--content{
+    /*max-height:  500px !important;*/
+    overflow: auto !important;
+}
+
+.cstm-meal .cstm-table table.vs-table--tbody-table{
+  position: inherit !important;
+}
+.cstm-table .vs-table--tbody {
+  position: inherit !important;
+  overflow: hidden !important;
+}
+/*.cstm-meal .cstm-table .vs-con-table .vs-con-tbody{*/
+  /*overflow: hidden !important;*/
+/*}*/
+.cstm-meal .cstm-table .vs-table--tbody-table .tr-values:not(.activeEdit):not(.tr-expandedx):not(.hoverFlat):hover {
+   z-index: 200;
+   -webkit-transform: none !important;
+   transform: none !important;
+}
+/*added by*/
+/*.register-form .vs-radio, .register-form vs-radio--label{width: 12px!important;height:12px !important;}*/
+/*.member-profile .vs-radio, .member-profile vs-radio--label{width: 12px!important;height:12px !important;}*/
+
+@media(max-width: 575px) {
+  .cstm-member{display: block !important;}
+  .button-save{margin-top: 5px !important;}
+  #form{width: 100% !important;}
+}
+
