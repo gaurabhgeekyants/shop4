@@ -14,7 +14,7 @@
         Login
       </vs-button>
     </div>
-    <div id="form" class="register-form">
+    <div id="form" class="register-form" >
       <div class="vx-row">
         <div class="vx-col md:w-1/1 w-full mb-base" style="margin: 0 auto;">
           <vx-card>
